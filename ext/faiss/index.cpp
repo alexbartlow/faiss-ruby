@@ -9,6 +9,7 @@
 #include <faiss/IndexIVFPQR.h>
 #include <faiss/index_io.h>
 #include <faiss/AutoTune.h>
+#include <faiss/index_factory.h>
 
 #include "utils.h"
 
@@ -147,7 +148,15 @@ void init_index(Rice::Module& m) {
       "load",
       [](Rice::String fname) {
         return faiss::read_index(fname.c_str());
-      });
+      })
+    .define_singleton_function(
+      "index_factory",
+      &faiss::index_factory,
+      Rice::Arg("d"),
+      Rice::Arg("description"),
+      Rice::Arg("metric") = faiss::METRIC_L2
+    );
+
 
   Rice::define_class_under<faiss::IndexFlatL2, faiss::Index>(m, "IndexFlatL2")
     .define_constructor(Rice::Constructor<faiss::IndexFlatL2, int64_t>());

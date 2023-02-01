@@ -141,6 +141,47 @@ class IndexTest < Minitest::Test
     assert_equal [[1, 0, 2], [1, 2, 0], [1, 2, 0]], ids.to_a
   end
 
+  def test_index_factory_hnsw_flat_inner_product
+    objects = [
+      [1, 1, 2, 1],
+      [5, 4, 6, 5],
+      [1, 2, 1, 2]
+    ]
+    index = Faiss::Index.index_factory(4, "HNSW,Flat", :inner_product)
+    index.add(objects)
+    distances, ids = index.search(objects, 3)
+
+    assert_equal [[26, 7, 7], [102, 29, 26], [29, 10, 7]], distances.to_a
+    assert_equal [[1, 0, 2], [1, 2, 0], [1, 2, 0]], ids.to_a
+  end
+
+  def test_index_factory
+    objects = [
+      [1, 1, 2, 1],
+      [5, 4, 6, 5],
+      [1, 2, 1, 2]
+    ]
+    index = Faiss::Index.index_factory(4, "Flat")
+    index.add(objects)
+    distances, ids = index.search(objects, 3)
+
+    assert_equal [[0, 3, 57], [0, 54, 57], [0, 3, 54]], distances.to_a
+    assert_equal [[0, 2, 1], [1, 2, 0], [2, 0, 1]], ids.to_a
+  end
+
+  def test_does_not_leak_memory
+    GC.start
+    prior = ObjectSpace.each_object(Faiss::Index) {}
+    1_000.times do
+      Faiss::Index.index_factory(4, "Flat")
+    end
+    GC.start
+    GC.start
+    posterior = ObjectSpace.each_object(Faiss::Index) {}
+
+    assert_equal prior, posterior
+  end
+
   def test_invalid_metric
     error = assert_raises do
       Faiss::IndexHNSWFlat.new(4, 2, :bad)
