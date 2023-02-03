@@ -169,6 +169,28 @@ class IndexTest < Minitest::Test
     assert_equal [[0, 2, 1], [1, 2, 0], [2, 0, 1]], ids.to_a
   end
 
+  def test_id_map
+    objects = [
+      [1, 1, 2, 1],
+      [5, 4, 6, 5],
+      [1, 2, 1, 2]
+    ]
+
+    ids = [
+      6,
+      9,
+      12
+    ]
+
+    index = Faiss::Index.index_factory(4, "IDMap,Flat")
+    index.add_with_ids(objects, ids)
+
+    distances, ids = index.search(objects, 3)
+
+    assert_equal [[0, 3, 57], [0, 54, 57], [0, 3, 54]], distances.to_a
+    assert_equal [[6, 12, 9], [9, 12, 6], [12, 6, 9]], ids.to_a
+  end
+
   def test_does_not_leak_memory
     GC.start
     prior = ObjectSpace.each_object(Faiss::Index) {}
